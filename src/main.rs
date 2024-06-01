@@ -2,6 +2,7 @@ mod auth;
 mod cli;
 mod fetch;
 // mod fuzzy_finder;
+mod fuzzy_finder;
 mod path_builder;
 mod search;
 mod sheet_client;

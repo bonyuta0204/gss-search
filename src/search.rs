@@ -1,7 +1,10 @@
 use serde_json::Value;
 
 use crate::{
-    path_builder::PathBuilder, sheet_data::SheetData, storage::load_from_storage,
+    fuzzy_finder::{self, FuzzyFinder},
+    path_builder::PathBuilder,
+    sheet_data::SheetData,
+    storage::load_from_storage,
     url_helper::extract_id_from_url,
 };
 
@@ -20,5 +23,11 @@ pub async fn run_search(url: &str) {
 
     let data = load_from_storage::<SheetData>(&store_path).expect("failed to read");
 
-    println!("{}", data)
+    let search_data: Vec<_> = data.iter().map(|row| row.to_string()).collect();
+
+    let fuzzy_finder = FuzzyFinder::new();
+
+    let results = fuzzy_finder.search("snowflake", &search_data);
+
+    dbg!(results);
 }
