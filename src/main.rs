@@ -1,7 +1,8 @@
 mod auth;
+mod sheet;
 
 use auth::create_auth;
-use google_sheets4::{hyper::Client, hyper_rustls, Sheets};
+use sheet::SheetClient;
 
 #[tokio::main]
 async fn main() {
@@ -9,37 +10,19 @@ async fn main() {
     // Create the HTTP client
     let auth = create_auth().await.expect("Failed to Authenticate");
 
-    // Create the Sheets API hub
-    let hub = Sheets::new(
-        Client::builder().build(
-            hyper_rustls::HttpsConnectorBuilder::new()
-                .with_native_roots()
-                .https_or_http()
-                .enable_http1()
-                .build(),
-        ),
-        auth,
-    );
+    let sheet_client = SheetClient::new(auth);
 
     // Replace with your spreadsheet ID and range
     let spreadsheet_id = "1O3zlFl2IslSwFOi-rYOX6hdlAIS2IhaTmGqzpgIgbbU";
     let range = "ListUp!A1:B2";
 
     // Fetch the values from the spreadsheet
-    let result = hub
-        .spreadsheets()
-        .values_get(spreadsheet_id, range)
-        .doit()
-        .await;
+    let result = sheet_client.fetch_data(spreadsheet_id, range).await;
 
     match result {
-        Ok((_, value_range)) => {
-            if let Some(values) = value_range.values {
-                for row in values {
-                    println!("{:?}", row);
-                }
-            } else {
-                println!("No data found.");
+        Ok(values) => {
+            for row in values {
+                println!("{:?}", row);
             }
         }
         Err(e) => println!("Error: {:?}", e),
