@@ -2,7 +2,7 @@
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::PathBuf;
 
@@ -15,6 +15,11 @@ pub fn load_from_storage<D: DeserializeOwned>(path: &str) -> Result<D, io::Error
 }
 
 pub fn save_to_storage<D: Serialize>(path: PathBuf, data: &D) -> Result<(), io::Error> {
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent).expect("Failed to create directories");
+        }
+    }
     let contents = serde_json::to_string(data)?;
     let mut file = File::create(path)?;
     file.write_all(contents.as_bytes())

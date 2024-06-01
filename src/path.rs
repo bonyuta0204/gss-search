@@ -10,3 +10,11 @@ pub fn path_for_sheet(spreadsheet_id: &str, sheet_id: i32) -> PathBuf {
     path.push(sheet_id.to_string());
     path
 }
+
+pub fn path_for_tokencache() -> PathBuf {
+    let mut path = dirs::home_dir().expect("Unable to get home directory");
+
+    path.push(".gss-search");
+    path.push("tokencache.json");
+    path
+}

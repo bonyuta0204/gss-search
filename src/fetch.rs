@@ -7,10 +7,7 @@ use crate::{
     url_helper::extract_id_from_url,
 };
 use spreadsheet::find_sheet_by_id;
-use std::fs::File;
-use std::io::{self, Write};
 
-use std::fs;
 pub async fn run_fetch(url: &str) {
     let spreadsheet_info = match extract_id_from_url(url) {
         Some(info) => info,
@@ -60,13 +57,7 @@ pub async fn run_fetch(url: &str) {
                 spreadsheet_info.sheet_id.unwrap(),
             );
 
-            if let Some(parent) = data_path.parent() {
-                if !parent.exists() {
-                    fs::create_dir_all(parent).expect("Failed to create directories");
-                }
-            }
-
-            save_to_storage(data_path, &values);
+            save_to_storage(data_path, &values).expect("failed to write to disk");
         }
         Err(e) => println!("Error: {:?}", e),
     }

@@ -1,4 +1,4 @@
-use std::io::Error;
+use std::{fs, io::Error};
 
 use google_sheets4::{
     hyper::client::HttpConnector,
@@ -7,6 +7,8 @@ use google_sheets4::{
         ApplicationSecret, InstalledFlowAuthenticator, InstalledFlowReturnMethod,
     },
 };
+
+use crate::path::path_for_tokencache;
 
 pub async fn build_secret_from_json() -> Result<ApplicationSecret, Error> {
     read_application_secret("clientsecret.json").await
@@ -40,8 +42,14 @@ pub async fn build_secret_from_env() -> Result<ApplicationSecret, String> {
 pub async fn build_auth(
     secret: ApplicationSecret,
 ) -> Result<Authenticator<HttpsConnector<HttpConnector>>, String> {
+    let tokencache_path = path_for_tokencache();
+    if let Some(parent) = tokencache_path.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent).expect("Failed to create directories");
+        }
+    }
     InstalledFlowAuthenticator::builder(secret, InstalledFlowReturnMethod::HTTPRedirect)
-        .persist_tokens_to_disk("tokencache.json")
+        .persist_tokens_to_disk(tokencache_path)
         .build()
         .await
         .map_err(|e| format!("Failed to authenticate. {}", e))
