@@ -2,6 +2,7 @@ use crate::{
     auth::create_auth,
     path_builder::PathBuilder,
     sheet_client::SheetClient,
+    sheet_data::SheetData,
     spreadsheet::{self, get_sheet_title},
     storage::save_to_storage,
     url_helper::extract_id_from_url,
@@ -53,9 +54,10 @@ pub async fn run_fetch(url: &str) {
 
     match result {
         Ok(values) => {
+            let sheet_data = SheetData::new(values);
             let data_path = path_builder.sheet_data(&spreadsheet_info);
 
-            save_to_storage(&data_path, &values).expect("failed to write to disk");
+            save_to_storage(&data_path, &sheet_data).expect("failed to write to disk");
         }
         Err(e) => println!("Error: {:?}", e),
     }
