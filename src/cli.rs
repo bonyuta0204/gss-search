@@ -11,11 +11,11 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// does testing things
-    Fetch {
-        /// lists test values
+    /// Fetch data and save it for search
+    Save {
+        /// URL for spreadsheet
         #[arg(short, long)]
-        spreadsheet_id: String,
+        url: String,
     },
 }
 

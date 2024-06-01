@@ -1,4 +1,5 @@
 use google_sheets4::{
+    api::Spreadsheet,
     client::GetToken,
     hyper::{client::HttpConnector, Client},
     hyper_rustls::{HttpsConnector, HttpsConnectorBuilder},
@@ -39,5 +40,16 @@ impl SheetClient {
             .await?;
         let values = response.1.values.unwrap_or_default();
         Ok(values)
+    }
+
+    pub async fn get_spreadsheet(
+        &self,
+        spreadsheet_id: &str,
+    ) -> Result<Spreadsheet, google_sheets4::Error> {
+        let response = self.hub.spreadsheets().get(spreadsheet_id).doit().await?;
+
+        let sheet = response.1;
+
+        Ok(sheet)
     }
 }
