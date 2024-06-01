@@ -4,9 +4,9 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-pub fn load_from_storage<D: DeserializeOwned>(path: &str) -> Result<D, io::Error> {
+pub fn load_from_storage<D: DeserializeOwned>(path: &Path) -> Result<D, io::Error> {
     let mut file = File::open(path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
@@ -14,7 +14,7 @@ pub fn load_from_storage<D: DeserializeOwned>(path: &str) -> Result<D, io::Error
     Ok(data)
 }
 
-pub fn save_to_storage<D: Serialize>(path: PathBuf, data: &D) -> Result<(), io::Error> {
+pub fn save_to_storage<D: Serialize>(path: &Path, data: &D) -> Result<(), io::Error> {
     if let Some(parent) = path.parent() {
         if !parent.exists() {
             fs::create_dir_all(parent).expect("Failed to create directories");

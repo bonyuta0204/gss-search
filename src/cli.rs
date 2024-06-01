@@ -17,6 +17,12 @@ pub enum Commands {
         #[arg(short, long)]
         url: String,
     },
+
+    Search {
+        /// URL for spreadsheet
+        #[arg(short, long)]
+        url: String,
+    },
 }
 
 pub fn parse_args() -> Cli {

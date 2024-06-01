@@ -34,8 +34,7 @@ pub async fn run_fetch(url: &str) {
         }
     };
 
-    let target_sheet =
-        find_sheet_by_id(&spreadsheet_detail, spreadsheet_info.sheet_id.unwrap_or(0));
+    let target_sheet = find_sheet_by_id(&spreadsheet_detail, spreadsheet_info.sheet_id);
 
     let range = match target_sheet {
         Some(sheet) => get_sheet_title(sheet).unwrap(),
@@ -54,12 +53,9 @@ pub async fn run_fetch(url: &str) {
 
     match result {
         Ok(values) => {
-            let data_path = path_builder.sheet_data(
-                &spreadsheet_info.spreadsheet_id,
-                spreadsheet_info.sheet_id.unwrap(),
-            );
+            let data_path = path_builder.sheet_data(&spreadsheet_info);
 
-            save_to_storage(data_path, &values).expect("failed to write to disk");
+            save_to_storage(&data_path, &values).expect("failed to write to disk");
         }
         Err(e) => println!("Error: {:?}", e),
     }

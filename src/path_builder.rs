@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use crate::url_helper::SpreadsheetInfo;
+
 const BASE_DIR: &str = ".gss-search";
 
 pub struct PathBuilder {
@@ -13,11 +15,11 @@ impl PathBuilder {
         Self { base_dir: path }
     }
 
-    pub fn sheet_data(&self, spreadsheet_id: &str, sheet_id: i32) -> PathBuf {
+    pub fn sheet_data(&self, spreadsheet_info: &SpreadsheetInfo) -> PathBuf {
         let mut path = self.base_dir.clone();
         path.push("data");
-        path.push(spreadsheet_id);
-        path.push(sheet_id.to_string());
+        path.push(spreadsheet_info.spreadsheet_id.clone());
+        path.push(spreadsheet_info.sheet_id.to_string());
         path
     }
 
