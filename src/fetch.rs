@@ -1,11 +1,16 @@
 use crate::{
     auth::create_auth,
+    path::path_for_sheet,
     sheet_client::SheetClient,
     spreadsheet::{self, get_sheet_title},
+    storage::save_to_storage,
     url_helper::extract_id_from_url,
 };
 use spreadsheet::find_sheet_by_id;
+use std::fs::File;
+use std::io::{self, Write};
 
+use std::fs;
 pub async fn run_fetch(url: &str) {
     let spreadsheet_info = match extract_id_from_url(url) {
         Some(info) => info,
@@ -50,9 +55,18 @@ pub async fn run_fetch(url: &str) {
 
     match result {
         Ok(values) => {
-            for row in values {
-                println!("{:?}", row);
+            let data_path = path_for_sheet(
+                &spreadsheet_info.spreadsheet_id,
+                spreadsheet_info.sheet_id.unwrap(),
+            );
+
+            if let Some(parent) = data_path.parent() {
+                if !parent.exists() {
+                    fs::create_dir_all(parent).expect("Failed to create directories");
+                }
             }
+
+            save_to_storage(data_path, &values);
         }
         Err(e) => println!("Error: {:?}", e),
     }
