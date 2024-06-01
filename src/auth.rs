@@ -8,7 +8,7 @@ use google_sheets4::{
     },
 };
 
-use crate::path::path_for_tokencache;
+use crate::path_builder::PathBuilder;
 
 pub async fn build_secret_from_json() -> Result<ApplicationSecret, Error> {
     read_application_secret("clientsecret.json").await
@@ -42,7 +42,8 @@ pub async fn build_secret_from_env() -> Result<ApplicationSecret, String> {
 pub async fn build_auth(
     secret: ApplicationSecret,
 ) -> Result<Authenticator<HttpsConnector<HttpConnector>>, String> {
-    let tokencache_path = path_for_tokencache();
+    let path_builder = PathBuilder::new();
+    let tokencache_path = path_builder.tokencache();
     if let Some(parent) = tokencache_path.parent() {
         if !parent.exists() {
             fs::create_dir_all(parent).expect("Failed to create directories");

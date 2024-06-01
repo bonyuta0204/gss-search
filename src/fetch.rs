@@ -1,6 +1,6 @@
 use crate::{
     auth::create_auth,
-    path::path_for_sheet,
+    path_builder::PathBuilder,
     sheet_client::SheetClient,
     spreadsheet::{self, get_sheet_title},
     storage::save_to_storage,
@@ -50,9 +50,11 @@ pub async fn run_fetch(url: &str) {
         .fetch_data(&spreadsheet_info.spreadsheet_id, &range)
         .await;
 
+    let path_builder = PathBuilder::new();
+
     match result {
         Ok(values) => {
-            let data_path = path_for_sheet(
+            let data_path = path_builder.sheet_data(
                 &spreadsheet_info.spreadsheet_id,
                 spreadsheet_info.sheet_id.unwrap(),
             );

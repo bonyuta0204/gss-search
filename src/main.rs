@@ -1,7 +1,7 @@
 mod auth;
 mod cli;
 mod fetch;
-mod path;
+mod path_builder;
 mod sheet_client;
 mod spreadsheet;
 mod storage;
