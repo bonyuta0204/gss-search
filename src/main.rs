@@ -5,6 +5,7 @@ mod fetch;
 mod fuzzy_finder;
 mod path_builder;
 mod search;
+mod select;
 mod sheet_client;
 mod sheet_data;
 mod spreadsheet;

@@ -26,6 +26,17 @@ impl<'a> SheetRow<'a> {
     pub fn new(data: &'a Vec<Value>) -> Self {
         Self { data }
     }
+
+    pub fn pretty_print(&self) {
+        for cell in self.data.iter() {
+            match cell {
+                Value::String(s) => println!("{}", s),
+                Value::Number(n) => println!("{}", n),
+                _ => {}
+            }
+        }
+        println!();
+    }
 }
 
 impl fmt::Display for SheetData {
