@@ -10,6 +10,7 @@ mod sheet_client;
 mod sheet_data;
 mod spreadsheet;
 mod storage;
+mod table;
 mod url_helper;
 
 use cli::{parse_args, Commands};
