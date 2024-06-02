@@ -1,15 +1,18 @@
+use core::fmt;
+
 use clap::builder::Str;
 use google_sheets4::hyper::header;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Table {
-    header: TableRow,
-    body: Vec<TableRow>,
-    columns: Vec<TableColumn>,
+    pub header: TableRow,
+    pub body: Vec<TableRow>,
+    pub columns: Vec<TableColumn>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TableRow {
     data: Vec<Value>,
 }
@@ -20,7 +23,20 @@ impl TableRow {
     }
 }
 
-#[derive(Debug)]
+impl fmt::Display for TableRow {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for cell in &self.data {
+            match cell {
+                Value::String(s) => write!(f, "{:<20} |", s.to_string())?,
+                Value::Number(n) => write!(f, "{:<20} |", n.to_string())?,
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TableColumn {
     title: String,
 }
@@ -40,7 +56,7 @@ impl From<Vec<Vec<Value>>> for Table {
         // calculate row size and column size
         let column_size: usize = value.iter().map(|row| row.len()).max().unwrap_or(0);
         // initialize columns based on the size
-        let columns = (0..column_size)
+        let mut columns: Vec<_> = (0..column_size)
             .map(|i| TableColumn {
                 title: String::new(),
             })
@@ -57,6 +73,13 @@ impl From<Vec<Vec<Value>>> for Table {
         }
 
         let header = TableRow::new(rows.remove(0));
+
+        for (i, cell) in header.data.iter().enumerate() {
+            if let Some(title) = cell.as_str() {
+                columns[i].title = title.to_owned()
+            }
+        }
+
         let body: Vec<_> = rows
             .into_iter()
             .map(|row| TableRow::new(row.to_owned()))
@@ -106,6 +129,7 @@ mod tests {
         assert_eq!(table.header.data.len(), 2);
         assert_eq!(table.body.len(), 2);
         assert_eq!(table.columns.len(), 2);
+        assert_eq!(table.columns[0].title, "header1")
     }
 
     #[test]
