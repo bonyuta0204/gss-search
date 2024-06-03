@@ -77,7 +77,9 @@ pub async fn run_fetch(url: &str) {
     match result {
         Ok(values) => {
             let table = Table::from(values);
+            log_progress("Table creating", &start);
             let data_path = path_builder.sheet_data(&spreadsheet_info);
+            log_progress("Table created", &start);
 
             save_to_storage(&data_path, &table).expect("failed to write to disk");
             log_progress("Data saved to storage successfully.", &start);
