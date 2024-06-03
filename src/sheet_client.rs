@@ -6,11 +6,11 @@ use google_sheets4::{
     Sheets,
 };
 use serde_json::Value;
+use tracing::info;
 
 pub struct SheetClient {
     hub: Sheets<HttpsConnector<HttpConnector>>,
 }
-
 impl SheetClient {
     pub fn new<A: GetToken + 'static>(auth: A) -> Self {
         let hub = Sheets::new(
@@ -27,6 +27,7 @@ impl SheetClient {
         Self { hub }
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn fetch_data(
         &self,
         spreadsheet_id: &str,
@@ -39,9 +40,11 @@ impl SheetClient {
             .doit()
             .await?;
         let values = response.1.values.unwrap_or_default();
+        info!("Spreadsheet data retrieved.");
         Ok(values)
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn get_spreadsheet(
         &self,
         spreadsheet_id: &str,
@@ -49,6 +52,8 @@ impl SheetClient {
         let response = self.hub.spreadsheets().get(spreadsheet_id).doit().await?;
 
         let sheet = response.1;
+
+        info!("Spreadsheet info retrieved.");
 
         Ok(sheet)
     }

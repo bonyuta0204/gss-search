@@ -28,4 +28,10 @@ impl PathBuilder {
         path.push("tokencache.json");
         path
     }
+
+    pub fn log_file(&self) -> PathBuf {
+        let mut path = self.base_dir.clone();
+        path.push("logging.json");
+        path
+    }
 }
