@@ -1,41 +1,47 @@
-use core::fmt;
+use core::fmt::{self, Display};
 
+use clap::builder::Str;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Table {
-    pub header: TableRowInternal,
-    pub body: Vec<TableRowInternal>,
+pub struct Table<C: Display> {
+    pub header: TableRowInternal<C>,
+    pub body: Vec<TableRowInternal<C>>,
     pub columns: Vec<TableColumn>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TableRowInternal {
-    data: Vec<Value>,
+pub struct TableRowInternal<C: Display> {
+    data: Vec<C>,
 }
 
-impl TableRowInternal {
-    pub fn new(data: Vec<Value>) -> Self {
+impl<C: Display> TableRowInternal<C> {
+    pub fn new(data: Vec<C>) -> Self {
         Self { data }
     }
 }
 
 #[derive(Debug)]
-pub struct TableRow<'a> {
-    internal: &'a TableRowInternal,
-    table: &'a Table,
+pub struct TableRow<'a, C: Display> {
+    internal: &'a TableRowInternal<C>,
+    table: &'a Table<C>,
 }
 
-impl<'a> fmt::Display for TableRow<'a> {
+impl<'a, C: Display> TableRow<'a, C> {
+    pub fn pretty_print(&self) {
+        for (i, cell) in self.internal.data.iter().enumerate() {
+            let column = &self.table.columns[i];
+            println!("{}:{}", column.title, cell)
+        }
+    }
+}
+
+impl<'a, C: Display> fmt::Display for TableRow<'a, C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (i, cell) in self.internal.data.iter().enumerate() {
-            let col_size = self.table.columns[i].max_content_lengh;
-            match cell {
-                Value::String(s) => write!(f, "{:<width$} |", s.to_string(), width = col_size)?,
-                Value::Number(n) => write!(f, "{:<width$} |", n.to_string(), width = col_size)?,
-                _ => {}
-            }
+            let col_size = self.table.columns[i].max_content_lengh.min(20);
+            write!(f, "{:<width$} |", cell, width = col_size)?;
         }
         Ok(())
     }
@@ -47,10 +53,10 @@ pub struct TableColumn {
     max_content_lengh: usize,
 }
 
-impl Table {
+impl<C: Display> Table<C> {
     pub fn new(
-        header: TableRowInternal,
-        body: Vec<TableRowInternal>,
+        header: TableRowInternal<C>,
+        body: Vec<TableRowInternal<C>>,
         columns: Vec<TableColumn>,
     ) -> Self {
         Self {
@@ -60,7 +66,7 @@ impl Table {
         }
     }
 
-    pub fn body_rows(&self) -> Vec<TableRow> {
+    pub fn body_rows(&self) -> Vec<TableRow<C>> {
         self.body
             .iter()
             .map(|row| TableRow {
@@ -71,7 +77,7 @@ impl Table {
     }
 }
 
-impl From<Vec<Vec<Value>>> for Table {
+impl From<Vec<Vec<Value>>> for Table<String> {
     fn from(value: Vec<Vec<Value>>) -> Self {
         // calculate row size and column size
         let column_size: usize = value.iter().map(|row| row.len()).max().unwrap_or(0);
@@ -93,23 +99,22 @@ impl From<Vec<Vec<Value>>> for Table {
             };
         }
 
+        let mut rows: Vec<_> = rows
+            .into_iter()
+            .map(|row| row.into_iter().map(|cell| value_to_string(cell)).collect())
+            .collect();
+
         let header = TableRowInternal::new(rows.remove(0));
 
         for (i, cell) in header.data.iter().enumerate() {
-            if let Some(title) = cell.as_str() {
-                columns[i].title = title.to_owned()
-            }
+            columns[i].title = cell.to_owned()
         }
 
         let body: Vec<_> = rows
             .into_iter()
             .map(|row| {
                 for (i, cell) in row.iter().enumerate() {
-                    let cell_length = match cell {
-                        Value::String(s) => s.len(),
-                        Value::Number(n) => n.to_string().len(),
-                        _ => 0,
-                    };
+                    let cell_length = cell.len();
                     if cell_length > columns[i].max_content_lengh {
                         columns[i].max_content_lengh = cell_length;
                     }
@@ -175,5 +180,13 @@ mod tests {
         assert_eq!(table.header.data.len(), 2);
         assert_eq!(table.body.len(), 2);
         assert_eq!(table.columns.len(), 3);
+    }
+}
+
+fn value_to_string(value: Value) -> String {
+    match value {
+        Value::String(s) => s,
+        Value::Number(n) => n.to_string(),
+        _ => String::new(),
     }
 }

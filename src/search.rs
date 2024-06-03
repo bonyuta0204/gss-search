@@ -15,7 +15,7 @@ pub async fn run_search(url: &str) {
     let path_builder = PathBuilder::new();
     let store_path = path_builder.sheet_data(&spreadsheet_info);
 
-    if let Ok(table) = load_from_storage::<Table>(&store_path) {
+    if let Ok(table) = load_from_storage::<Table<String>>(&store_path) {
         // Spawn a background task to refresh the data
         let url = url.to_string();
         tokio::spawn(async move {
@@ -24,12 +24,12 @@ pub async fn run_search(url: &str) {
 
         // Proceed with the search using cached data
         let selected = interactive_select(table.body_rows()).expect("Failed to select");
-        println!("{:#?}", selected);
+        selected.pretty_print();
     } else {
         // Fetch data first if no cached data exists
         run_fetch(url).await;
-        let table = load_from_storage::<Table>(&store_path).expect("failed to read");
+        let table = load_from_storage::<Table<String>>(&store_path).expect("failed to read");
         let selected = interactive_select(table.body_rows()).expect("Failed to select");
-        println!("{:#?}", selected);
+        selected.pretty_print();
     }
 }
