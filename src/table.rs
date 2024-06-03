@@ -2,6 +2,7 @@ use core::fmt::{self, Display};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use tracing::info;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Table<C: Display> {
@@ -122,6 +123,11 @@ impl From<Vec<Vec<Value>>> for Table<String> {
             })
             .collect();
 
+        info!(
+            "Table created. Colmns: {}, Rows: {}",
+            columns.len(),
+            body.len()
+        );
         // create table body
         Table::new(header, body, columns)
     }

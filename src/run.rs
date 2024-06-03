@@ -31,7 +31,7 @@ pub async fn run(url: &str) {
         // Spawn a background task to refresh the data
         let url = url.to_string();
         let handle = tokio::spawn(async move {
-            build_cache(&url).await;
+            let _ = build_cache(&url).await;
         });
 
         // Proceed with the search using cached data
@@ -40,7 +40,7 @@ pub async fn run(url: &str) {
         handle.await.expect("Failed to refresh the cache")
     } else {
         // Fetch data first if no cached data exists
-        build_cache(url).await;
+        build_cache(url).await.expect("Failed to create cache");
         let table = load_from_storage::<Table<String>>(&store_path).expect("failed to read");
         let selected = interactive_select(table.body_rows()).expect("Failed to select");
         selected.pretty_print();
