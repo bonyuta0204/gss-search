@@ -1,9 +1,9 @@
 mod auth;
+mod cache;
 mod cli;
-mod fetch;
 mod log;
 mod path_builder;
-mod search;
+mod run;
 mod select;
 mod sheet_client;
 mod spreadsheet;
@@ -11,25 +11,23 @@ mod storage;
 mod table;
 mod url_helper;
 
-use cli::{parse_args, Commands};
-use fetch::run_fetch;
+use std::error::Error;
+
+use cli::parse_args;
 use log::build_subscriber;
-use search::run_search;
+use run::run;
 use tracing::info;
 use tracing_subscriber::util::SubscriberInitExt;
 // ensure that the directory exists
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn Error>> {
     let args = parse_args();
 
     build_subscriber().init();
 
     info!("started");
 
-    match &args.command {
-        Some(Commands::Save { url }) => run_fetch(url).await,
-        Some(Commands::Search { url }) => run_search(url).await,
-        None => {}
-    }
+    run(&args.url).await;
+    Ok(())
 }
