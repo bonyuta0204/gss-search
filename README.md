@@ -18,6 +18,15 @@
 
 ## Installation
 
+### Using Cargo Install
+
+1. **Install directly from GitHub**:
+   ```sh
+   cargo install --git https://github.com/bonyuta0204/gss-search
+   ```
+
+### From GitHub Repository
+
 1. **Clone the repository**:
    ```sh
    git clone https://github.com/bonyuta0204/gss-search.git
@@ -31,7 +40,7 @@
 
 3. **Run the project**:
    ```sh
-   ./target/release/gss-search
+   ./target/release/gss-search --url YOUR_SPREADSHEET_URL
    ```
 
 ## Configuration
@@ -60,15 +69,21 @@ To use `gss-search`, you need to create and configure a Google Spreadsheet API O
 
 ## Usage
 
-1. **Fetch data from Google Sheets**:
-   ```sh
-   ./target/release/gss-search fetch --spreadsheet_id YOUR_SPREADSHEET_ID --range YOUR_RANGE
-   ```
+`gss-search` allows users to fetch, cache, and fuzzy search records from Google Spreadsheets using a user-friendly command-line interface.
 
-2. **Search data**:
-   ```sh
-   ./target/release/gss-search search --query YOUR_QUERY
-   ```
+```sh
+Usage: gss-search --url <URL>
+
+Options:
+  -u, --url <URL>
+          URL for spreadsheet
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+```
 
 ## Development
 
@@ -96,8 +111,7 @@ To use `gss-search`, you need to create and configure a Google Spreadsheet API O
 
 4. **Run the project**:
    ```sh
-   cargo run -- fetch --spreadsheet_id YOUR_SPREADSHEET_ID --range YOUR_RANGE
-   cargo run -- search --query YOUR_QUERY
+   cargo run -- --url YOUR_SPREADSHEET_URL
    ```
 
 ## Contributing
