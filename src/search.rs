@@ -23,13 +23,13 @@ pub async fn run_search(url: &str) {
         });
 
         // Proceed with the search using cached data
-        let selected = interactive_select(table.body).expect("Failed to select");
+        let selected = interactive_select(table.body_rows()).expect("Failed to select");
         println!("{:#?}", selected);
     } else {
         // Fetch data first if no cached data exists
         run_fetch(url).await;
         let table = load_from_storage::<Table>(&store_path).expect("failed to read");
-        let selected = interactive_select(table.body).expect("Failed to select");
+        let selected = interactive_select(table.body_rows()).expect("Failed to select");
         println!("{:#?}", selected);
     }
 }

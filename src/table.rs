@@ -5,28 +5,35 @@ use serde_json::Value;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Table {
-    pub header: TableRow,
-    pub body: Vec<TableRow>,
+    pub header: TableRowInternal,
+    pub body: Vec<TableRowInternal>,
     pub columns: Vec<TableColumn>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TableRow {
+pub struct TableRowInternal {
     data: Vec<Value>,
 }
 
-impl TableRow {
+impl TableRowInternal {
     pub fn new(data: Vec<Value>) -> Self {
         Self { data }
     }
 }
 
-impl fmt::Display for TableRow {
+#[derive(Debug)]
+pub struct TableRow<'a> {
+    internal: &'a TableRowInternal,
+    table: &'a Table,
+}
+
+impl<'a> fmt::Display for TableRow<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for cell in &self.data {
+        for (i, cell) in self.internal.data.iter().enumerate() {
+            let col_size = self.table.columns[i].max_content_lengh;
             match cell {
-                Value::String(s) => write!(f, "{:<20} |", s.to_string())?,
-                Value::Number(n) => write!(f, "{:<20} |", n.to_string())?,
+                Value::String(s) => write!(f, "{:<width$} |", s.to_string(), width = col_size)?,
+                Value::Number(n) => write!(f, "{:<width$} |", n.to_string(), width = col_size)?,
                 _ => {}
             }
         }
@@ -37,15 +44,30 @@ impl fmt::Display for TableRow {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TableColumn {
     title: String,
+    max_content_lengh: usize,
 }
 
 impl Table {
-    pub fn new(header: TableRow, body: Vec<TableRow>, columns: Vec<TableColumn>) -> Self {
+    pub fn new(
+        header: TableRowInternal,
+        body: Vec<TableRowInternal>,
+        columns: Vec<TableColumn>,
+    ) -> Self {
         Self {
             header,
             body,
             columns,
         }
+    }
+
+    pub fn body_rows(&self) -> Vec<TableRow> {
+        self.body
+            .iter()
+            .map(|row| TableRow {
+                internal: row,
+                table: self,
+            })
+            .collect()
     }
 }
 
@@ -57,6 +79,7 @@ impl From<Vec<Vec<Value>>> for Table {
         let mut columns: Vec<_> = (0..column_size)
             .map(|_i| TableColumn {
                 title: String::new(),
+                max_content_lengh: 0,
             })
             .collect();
 
@@ -64,13 +87,13 @@ impl From<Vec<Vec<Value>>> for Table {
 
         if rows.len() < 1 {
             return Self {
-                header: TableRow::new(Vec::new()),
+                header: TableRowInternal::new(Vec::new()),
                 body: Vec::new(),
                 columns: Vec::new(),
             };
         }
 
-        let header = TableRow::new(rows.remove(0));
+        let header = TableRowInternal::new(rows.remove(0));
 
         for (i, cell) in header.data.iter().enumerate() {
             if let Some(title) = cell.as_str() {
@@ -80,7 +103,19 @@ impl From<Vec<Vec<Value>>> for Table {
 
         let body: Vec<_> = rows
             .into_iter()
-            .map(|row| TableRow::new(row.to_owned()))
+            .map(|row| {
+                for (i, cell) in row.iter().enumerate() {
+                    let cell_length = match cell {
+                        Value::String(s) => s.len(),
+                        Value::Number(n) => n.to_string().len(),
+                        _ => 0,
+                    };
+                    if cell_length > columns[i].max_content_lengh {
+                        columns[i].max_content_lengh = cell_length;
+                    }
+                }
+                TableRowInternal::new(row.to_owned())
+            })
             .collect();
 
         // create table body
