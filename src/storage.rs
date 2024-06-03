@@ -4,7 +4,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 
 pub fn load_from_storage<D: DeserializeOwned>(path: &Path) -> Result<D, io::Error> {
     let mut file = File::open(path)?;

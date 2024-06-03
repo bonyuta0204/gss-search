@@ -8,12 +8,21 @@ use crate::{
     url_helper::extract_id_from_url,
 };
 use spreadsheet::find_sheet_by_id;
+use std::time::Instant;
+
+fn log_progress(message: &str, start: &Instant) {
+    println!("[{:>6} ms] {}", start.elapsed().as_millis(), message);
+}
 
 pub async fn run_fetch(url: &str) {
+    let start = Instant::now();
     let spreadsheet_info = match extract_id_from_url(url) {
-        Some(info) => info,
+        Some(info) => {
+            log_progress("Spreadsheet information extracted successfully.", &start);
+            info
+        }
         None => {
-            eprintln!("Error: Invalid URL or unable to extract spreadsheet information.");
+            eprintln!("Error: Invalid URL or unable to extract spreadsheet information. Time elapsed: {:?}", start.elapsed());
             return;
         }
     };
@@ -21,36 +30,49 @@ pub async fn run_fetch(url: &str) {
     // Create the authenticator
     // Create the HTTP client
     let auth = create_auth().await.expect("Failed to Authenticate");
+    log_progress("Authentication successful.", &start);
 
     let sheet_client = SheetClient::new(auth);
+    log_progress("Sheet client created successfully.", &start);
 
     let spreadsheet_detail = match sheet_client
         .get_spreadsheet(&spreadsheet_info.spreadsheet_id)
         .await
     {
-        Ok(sheet) => sheet,
+        Ok(sheet) => {
+            log_progress("Spreadsheet details fetched successfully.", &start);
+            sheet
+        }
         Err(_) => {
-            eprintln!("Error: Invalid URL or unable to extract spreadsheet information.");
+            eprintln!("Error: Invalid URL or unable to extract spreadsheet information. Time elapsed: {:?}", start.elapsed());
             return;
         }
     };
 
     let target_sheet = find_sheet_by_id(&spreadsheet_detail, spreadsheet_info.sheet_id);
+    log_progress("Target sheet identified successfully.", &start);
 
     let range = match target_sheet {
-        Some(sheet) => get_sheet_title(sheet).unwrap(),
+        Some(sheet) => {
+            log_progress("Sheet title fetched successfully.", &start);
+            get_sheet_title(sheet).unwrap()
+        }
         None => {
-            eprint!("failed");
+            eprintln!(
+                "Failed to fetch sheet title. Time elapsed: {:?}",
+                start.elapsed()
+            );
             return;
         }
     };
 
-    // Fetch the values from the spreadsheet
     let result = sheet_client
         .fetch_data(&spreadsheet_info.spreadsheet_id, &range)
         .await;
+    log_progress("Data fetched successfully.", &start);
 
     let path_builder = PathBuilder::new();
+    log_progress("Path builder created successfully.", &start);
 
     match result {
         Ok(values) => {
@@ -58,7 +80,8 @@ pub async fn run_fetch(url: &str) {
             let data_path = path_builder.sheet_data(&spreadsheet_info);
 
             save_to_storage(&data_path, &table).expect("failed to write to disk");
+            log_progress("Data saved to storage successfully.", &start);
         }
-        Err(e) => println!("Error: {:?}", e),
+        Err(e) => println!("Error: {:?}. Time elapsed: {:?}", e, start.elapsed()),
     }
 }

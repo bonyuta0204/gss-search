@@ -1,7 +1,5 @@
 use core::fmt;
 
-use clap::builder::Str;
-use google_sheets4::hyper::header;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -57,7 +55,7 @@ impl From<Vec<Vec<Value>>> for Table {
         let column_size: usize = value.iter().map(|row| row.len()).max().unwrap_or(0);
         // initialize columns based on the size
         let mut columns: Vec<_> = (0..column_size)
-            .map(|i| TableColumn {
+            .map(|_i| TableColumn {
                 title: String::new(),
             })
             .collect();
@@ -86,11 +84,7 @@ impl From<Vec<Vec<Value>>> for Table {
             .collect();
 
         // create table body
-        Table {
-            header,
-            body,
-            columns,
-        }
+        Table::new(header, body, columns)
     }
 }
 
