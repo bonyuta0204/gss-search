@@ -1,4 +1,4 @@
-use std::fs::{self, File, OpenOptions};
+use std::fs::{self, OpenOptions};
 
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{

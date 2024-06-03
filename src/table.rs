@@ -1,6 +1,5 @@
 use core::fmt::{self, Display};
 
-use clap::builder::Str;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -89,7 +88,7 @@ impl From<Vec<Vec<Value>>> for Table<String> {
             })
             .collect();
 
-        let mut rows: Vec<_> = value.into_iter().filter(|row| !row.is_empty()).collect();
+        let rows: Vec<_> = value.into_iter().filter(|row| !row.is_empty()).collect();
 
         if rows.len() < 1 {
             return Self {
