@@ -32,7 +32,7 @@ impl<'a, C: Display> TableRow<'a, C> {
     pub fn pretty_print(&self) {
         for (i, cell) in self.internal.data.iter().enumerate() {
             let column = &self.table.columns[i];
-            println!("{}:{}", column.title, cell)
+            println!("{:<15}: {}", column.title, cell)
         }
     }
 }
@@ -40,7 +40,7 @@ impl<'a, C: Display> TableRow<'a, C> {
 impl<'a, C: Display> fmt::Display for TableRow<'a, C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (i, cell) in self.internal.data.iter().enumerate() {
-            let col_size = self.table.columns[i].max_content_lengh.min(20);
+            let col_size = self.table.columns[i].max_content_length.min(20);
             write!(f, "{:<width$} |", cell, width = col_size)?;
         }
         Ok(())
@@ -50,7 +50,7 @@ impl<'a, C: Display> fmt::Display for TableRow<'a, C> {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TableColumn {
     title: String,
-    max_content_lengh: usize,
+    max_content_length: usize,
 }
 
 impl<C: Display> Table<C> {
@@ -85,7 +85,7 @@ impl From<Vec<Vec<Value>>> for Table<String> {
         let mut columns: Vec<_> = (0..column_size)
             .map(|_i| TableColumn {
                 title: String::new(),
-                max_content_lengh: 0,
+                max_content_length: 0,
             })
             .collect();
 
@@ -115,8 +115,8 @@ impl From<Vec<Vec<Value>>> for Table<String> {
             .map(|row| {
                 for (i, cell) in row.iter().enumerate() {
                     let cell_length = cell.len();
-                    if cell_length > columns[i].max_content_lengh {
-                        columns[i].max_content_lengh = cell_length;
+                    if cell_length > columns[i].max_content_length {
+                        columns[i].max_content_length = cell_length;
                     }
                 }
                 TableRowInternal::new(row.to_owned())
@@ -124,7 +124,7 @@ impl From<Vec<Vec<Value>>> for Table<String> {
             .collect();
 
         info!(
-            "Table created. Colmns: {}, Rows: {}",
+            "Table created. Columns: {}, Rows: {}",
             columns.len(),
             body.len()
         );
