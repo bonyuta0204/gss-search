@@ -1,6 +1,10 @@
+use tokio::task::JoinHandle;
+
+use crate::select::skim_select;
+use crate::table::TableRow;
 use crate::{
-    cache::build_cache, path_builder::PathBuilder, select::interactive_select,
-    storage::load_from_storage, table::Table, url_helper::extract_id_from_url,
+    cache::build_cache, path_builder::PathBuilder, storage::load_from_storage, table::Table,
+    url_helper::extract_id_from_url,
 };
 
 /// Fetches data from a Google Spreadsheet and saves it locally.
@@ -28,21 +32,26 @@ pub async fn run(url: &str) {
     let store_path = path_builder.sheet_data(&spreadsheet_info);
 
     if let Ok(table) = load_from_storage::<Table<String>>(&store_path) {
-        // Spawn a background task to refresh the data
-        let url = url.to_string();
-        let handle = tokio::spawn(async move {
-            let _ = build_cache(&url).await;
-        });
-
-        // Proceed with the search using cached data
-        let selected = interactive_select(table.body_rows()).expect("Failed to select");
-        selected.pretty_print();
-        handle.await.expect("Failed to refresh the cache")
+        let handle = refresh_cache_in_background(url);
+        process_table(table);
+        handle.await.expect("Failed to refresh cache");
     } else {
-        // Fetch data first if no cached data exists
         build_cache(url).await.expect("Failed to create cache");
-        let table = load_from_storage::<Table<String>>(&store_path).expect("failed to read");
-        let selected = interactive_select(table.body_rows()).expect("Failed to select");
-        selected.pretty_print();
+        let table = load_from_storage::<Table<String>>(&store_path).expect("Failed to read");
+        process_table(table);
     }
+}
+
+fn refresh_cache_in_background(url: &str) -> JoinHandle<()> {
+    let url = url.to_string();
+    let handle = tokio::spawn(async move {
+        let _ = build_cache(&url).await;
+    });
+    handle
+}
+
+fn process_table(table: Table<String>) {
+    let rows: Vec<TableRow<String>> = table.body_rows().clone();
+    let selected = skim_select(rows).expect("Failed to select");
+    selected.pretty_print();
 }
