@@ -1,59 +1,61 @@
 use core::fmt::{self, Display};
+use std::borrow::Cow;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use skim::SkimItem;
 use tracing::info;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Table<C: Display> {
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Table<C: Display + Sync + Send> {
     pub header: TableRowInternal<C>,
     pub body: Vec<TableRowInternal<C>>,
     pub columns: Vec<TableColumn>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TableRowInternal<C: Display> {
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TableRowInternal<C: Display + Sync + Send> {
     data: Vec<C>,
 }
 
-impl<C: Display> TableRowInternal<C> {
+impl<C: Display + Sync + Send> TableRowInternal<C> {
     pub fn new(data: Vec<C>) -> Self {
         Self { data }
     }
 }
 
-#[derive(Debug)]
-pub struct TableRow<'a, C: Display> {
-    internal: &'a TableRowInternal<C>,
-    table: &'a Table<C>,
+#[derive(Debug, Clone)]
+pub struct TableRow<C: Display + Sync + Send> {
+    internal: TableRowInternal<C>,
+    columns: Vec<TableColumn>,
 }
 
-impl<'a, C: Display> TableRow<'a, C> {
+impl<C: Display + Sync + Send> TableRow<C> {
     pub fn pretty_print(&self) {
         for (i, cell) in self.internal.data.iter().enumerate() {
-            let column = &self.table.columns[i];
+            let column = &self.columns[i];
             println!("{:<15}: {}", column.title, cell)
         }
     }
 }
 
-impl<'a, C: Display> fmt::Display for TableRow<'a, C> {
+impl<C: Display + Sync + Send> fmt::Display for TableRow<C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (i, cell) in self.internal.data.iter().enumerate() {
-            let col_size = self.table.columns[i].max_content_length.min(20);
+            let col_size = self.columns[i].max_content_length.min(20);
             write!(f, "{:<width$} |", cell, width = col_size)?;
         }
         Ok(())
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TableColumn {
     title: String,
     max_content_length: usize,
 }
 
-impl<C: Display> Table<C> {
+impl<C: Display + Sync + Send + Clone> Table<C> {
     pub fn new(
         header: TableRowInternal<C>,
         body: Vec<TableRowInternal<C>>,
@@ -70,8 +72,8 @@ impl<C: Display> Table<C> {
         self.body
             .iter()
             .map(|row| TableRow {
-                internal: row,
-                table: self,
+                internal: (*row).to_owned(),
+                columns: self.columns.to_owned(),
             })
             .collect()
     }
@@ -130,6 +132,16 @@ impl From<Vec<Vec<Value>>> for Table<String> {
         );
         // create table body
         Table::new(header, body, columns)
+    }
+}
+
+impl<C: Display + Sync + Send + 'static> SkimItem for TableRow<C> {
+    fn text(&self) -> Cow<str> {
+        Cow::Owned(self.to_string())
+    }
+
+    fn output(&self) -> Cow<str> {
+        Cow::Owned(self.to_string())
     }
 }
 
