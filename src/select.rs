@@ -12,7 +12,8 @@ pub fn interactive_select<S: Display>(data: Vec<S>) -> Result<S, inquire::Inquir
 
 pub fn skim_select<C: skim::SkimItem + Clone + 'static>(data: Vec<C>) -> Option<C> {
     let options = SkimOptionsBuilder::default()
-        .height(Some("50%"))
+        .height(Some("40%"))
+        .reverse(true)
         .multi(false)
         .bind(vec!["Enter:accept"])
         .build()
